@@ -1,18 +1,8 @@
 package com.mycompany.filearchiver;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -24,23 +14,24 @@ public class MainFrame extends javax.swing.JFrame {
     JFileChooser fc = new JFileChooser();
     List<File> saveFiles = new LinkedList<>();
     File selectedFolder;
+    String savePath = "";
     
     private class ProgressBar extends SwingWorker<Void, Void> {
         private int progress = 0;
         
         @Override
         protected Void doInBackground() throws Exception {
-            //progressBar.setValue(progress);
-            Thread.sleep(100);
+            Zip.zip(savePath, saveFiles, progressBar);
             return null;
         }
         
-        public void setCount(int count) throws InterruptedException {
-            this.progress = count;
-            progressBar.setValue(progress);
-            //progressBar.setValue(progress);
-            //Thread.sleep(1000);
-            System.out.println(progress);
+        @Override
+        public void done(){
+            infoLabel.setText("Done!");
+            fileModel.clear();
+            JOptionPane.showMessageDialog(rootPane, "Your files have been compressed!", 
+                        "Files compressed!", JOptionPane.INFORMATION_MESSAGE);
+            
         }
         
     }
@@ -50,6 +41,7 @@ public class MainFrame extends javax.swing.JFrame {
         listFiles.setModel(fileModel);
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         progressBar.setStringPainted(true);
+        zipOption.setEnabled(false);
     }
 
     /**
@@ -64,6 +56,7 @@ public class MainFrame extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         listFiles = new javax.swing.JList<>();
         progressBar = new javax.swing.JProgressBar();
+        infoLabel = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         FileMenu = new javax.swing.JMenu();
         openOption = new javax.swing.JMenuItem();
@@ -72,6 +65,7 @@ public class MainFrame extends javax.swing.JFrame {
         editMenu = new javax.swing.JMenu();
         zipOption = new javax.swing.JMenuItem();
         aboutMenu = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -89,14 +83,21 @@ public class MainFrame extends javax.swing.JFrame {
         FileMenu.add(openOption);
         FileMenu.add(jSeparator);
 
+        exitOption.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F4, java.awt.event.InputEvent.ALT_DOWN_MASK | java.awt.event.InputEvent.CTRL_DOWN_MASK));
         exitOption.setText("Exit");
+        exitOption.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exitOptionActionPerformed(evt);
+            }
+        });
         FileMenu.add(exitOption);
 
         jMenuBar1.add(FileMenu);
 
         editMenu.setText("Edit");
 
-        zipOption.setText("Zip Files");
+        zipOption.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        zipOption.setText("Compress Files");
         zipOption.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 zipOptionActionPerformed(evt);
@@ -107,6 +108,15 @@ public class MainFrame extends javax.swing.JFrame {
         jMenuBar1.add(editMenu);
 
         aboutMenu.setText("About");
+
+        jMenuItem1.setText("Authors");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        aboutMenu.add(jMenuItem1);
+
         jMenuBar1.add(aboutMenu);
 
         setJMenuBar(jMenuBar1);
@@ -119,81 +129,46 @@ public class MainFrame extends javax.swing.JFrame {
                 .addGap(31, 31, 31)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 220, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(56, 56, 56)
-                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(60, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(23, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(43, 43, 43)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 360, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(173, 173, 173)
+                        .addComponent(infoLabel)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(193, 193, 193)
-                        .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(24, 24, 24)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 360, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(30, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    public void setCount(int count) throws InterruptedException {
-        //this.progress = count;
-        progressBar.setValue(count);
-        //progressBar.setValue(progress);
-        //Thread.sleep(1000);
-        System.out.println(count);
-    }
     
     private void zipOptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_zipOptionActionPerformed
-        String savePath = "";
-        //ProgressBar progressBar = new ProgressBar();
         JFileChooser fcSave = new JFileChooser();
         int res = fcSave.showSaveDialog(this);
         
         if (res == JFileChooser.APPROVE_OPTION) {
             File file = fcSave.getSelectedFile();
-            int res2 = JOptionPane.showConfirmDialog(rootPane, "Are you sure?", "Save", JOptionPane.YES_NO_OPTION);
+            int res2 = JOptionPane.showConfirmDialog(rootPane, "Are you sure?", 
+                    "Save selected files to compress", JOptionPane.YES_NO_OPTION);
+            
             if (res2 == JOptionPane.YES_OPTION) {
                 savePath = file.getAbsolutePath();
-            }else{
-                return;
+                infoLabel.setText("Compressing files ...");
+                ProgressBar progressBarClass = new ProgressBar();
+                progressBarClass.execute();
             }
         }
         
-        try {
-            BufferedInputStream origin = null;
-            FileOutputStream dest = new FileOutputStream(savePath + ".zip"); // path al guardar
-            ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(dest));
-            byte[] data = new byte[1024];
-            Iterator i = saveFiles.iterator();
-            
-            int c = 0;
-            while (i.hasNext()) {
-                c++;
-                System.out.println("c = " + c);
-                this.setCount(((c * 100) / saveFiles.size()));
-                //progressBar.execute();
-                File filename = (File) i.next();
-                String path = filename.getPath();
-                FileInputStream fi = new FileInputStream(path);
-                origin = new BufferedInputStream(fi, 1024);
-                ZipEntry entry = new ZipEntry(filename.getName());
-                out.putNextEntry(entry);
-                
-                int count;
-                while ((count = origin.read(data, 0, 1024)) != -1) {
-                    out.write(data, 0, count);
-                }
-                origin.close();
-                //progressBar.setCount(((c * 100) / saveFiles.size()));
-            }
-            //progressBar.execute();
-            out.close();
-        }catch( IOException e){} catch (InterruptedException ex) {
-            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }//GEN-LAST:event_zipOptionActionPerformed
 
     private void openOptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openOptionActionPerformed
@@ -210,6 +185,19 @@ public class MainFrame extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_openOptionActionPerformed
+
+    private void exitOptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitOptionActionPerformed
+        int res = JOptionPane.showConfirmDialog(rootPane, "Are you sure you want to exit?", "Exit", JOptionPane.YES_NO_OPTION);
+        
+        if(res == JOptionPane.YES_OPTION) {
+            this.dispose();
+        }
+    }//GEN-LAST:event_exitOptionActionPerformed
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        JOptionPane.showMessageDialog(rootPane, "Luis Galindo Molina | Prashant Jeswani Tejwani", 
+                "Authors", WIDTH);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -266,7 +254,9 @@ catch (javax.swing.UnsupportedLookAndFeelException ex) {
     private javax.swing.JMenu aboutMenu;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuItem exitOption;
+    private javax.swing.JLabel infoLabel;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator;
     private javax.swing.JList<String> listFiles;
