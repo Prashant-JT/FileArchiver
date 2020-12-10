@@ -233,6 +233,7 @@ public class MainFrame extends javax.swing.JFrame {
             return;
         }
         JFileChooser fcSave = new JFileChooser();
+        fcSave.setSelectedFile(new File(selectedFolder.getName()));
         int res = fcSave.showSaveDialog(this);
         
         if (res == JFileChooser.APPROVE_OPTION) {
