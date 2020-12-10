@@ -21,7 +21,7 @@ public class MainFrame extends javax.swing.JFrame {
     DefaultListModel fileModel = new DefaultListModel();
     JFileChooser fc = new JFileChooser();
     List<File> saveFiles = new LinkedList<>();
-    ProgressBar progressBarClass = new ProgressBar();
+    ProgressBar progressBarClass;
     File selectedFolder;
     String savePath = "";
     
@@ -62,7 +62,9 @@ public class MainFrame extends javax.swing.JFrame {
                 origin.close();
             }
             out.close();
-            }catch( IOException e){}
+            }catch( IOException e){
+                System.out.println("Error");
+            }
             
             return null;
         }
@@ -75,11 +77,11 @@ public class MainFrame extends javax.swing.JFrame {
                 
                 progressBar.setValue(0);
                 infoLabel.setText("");
-                infoLabelOpen.setText("Choose a folder to open");
                 cancelButton.setEnabled(false);
                 return;
             }
             
+            progressBar.setValue(0);
             infoLabel.setText("Done!");
             fileModel.clear();
             JOptionPane.showMessageDialog(rootPane, "Your files have been compressed!", 
@@ -242,6 +244,7 @@ public class MainFrame extends javax.swing.JFrame {
                 cancelButton.setEnabled(true);
                 savePath = file.getAbsolutePath();
                 infoLabel.setText("Compressing files ...");
+                progressBarClass = new ProgressBar();
                 progressBarClass.execute();
             }
         }
@@ -269,7 +272,8 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_openOptionActionPerformed
 
     private void exitOptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitOptionActionPerformed
-        int res = JOptionPane.showConfirmDialog(rootPane, "Are you sure you want to exit?", "Exit", JOptionPane.YES_NO_OPTION);
+        int res = JOptionPane.showConfirmDialog(rootPane, "Are you sure you want to exit?", 
+                "Exit", JOptionPane.YES_NO_OPTION);
         
         if(res == JOptionPane.YES_OPTION) {
             this.dispose();
