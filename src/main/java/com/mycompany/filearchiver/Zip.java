@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
 public class Zip {

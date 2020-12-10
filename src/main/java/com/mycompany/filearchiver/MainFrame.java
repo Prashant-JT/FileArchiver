@@ -21,7 +21,14 @@ public class MainFrame extends javax.swing.JFrame {
         
         @Override
         protected Void doInBackground() throws Exception {
-            Zip.zip(savePath, saveFiles, progressBar);
+            List<File> selectedFiles = new LinkedList<>();
+            int[] selectedIndices = listFiles.getSelectedIndices();
+            
+            for (int selected : selectedIndices) {
+                selectedFiles.add(saveFiles.get(selected));
+            }
+            
+            Zip.zip(savePath, selectedFiles, progressBar);
             return null;
         }
         
@@ -41,7 +48,6 @@ public class MainFrame extends javax.swing.JFrame {
         listFiles.setModel(fileModel);
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         progressBar.setStringPainted(true);
-        zipOption.setEnabled(false);
     }
 
     /**
@@ -69,6 +75,7 @@ public class MainFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        listFiles.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Select the files you want to compress", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.ABOVE_TOP));
         jScrollPane1.setViewportView(listFiles);
 
         FileMenu.setText("File");
@@ -126,33 +133,39 @@ public class MainFrame extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(31, 31, 31)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 220, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(56, 56, 56)
+                .addGap(65, 65, 65)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(65, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(23, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(9, 9, 9)
+                        .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(77, 77, 77))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(173, 173, 173)
-                        .addComponent(infoLabel)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(24, 24, 24)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 360, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(30, Short.MAX_VALUE))
+                .addGap(24, 24, 24)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 360, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
     
     private void zipOptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_zipOptionActionPerformed
+        if (listFiles.isSelectionEmpty()) {
+            JOptionPane.showMessageDialog(null, "You have not selected any files to compress!", 
+                    "Files not selected", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         JFileChooser fcSave = new JFileChooser();
         int res = fcSave.showSaveDialog(this);
         
@@ -172,6 +185,9 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_zipOptionActionPerformed
 
     private void openOptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openOptionActionPerformed
+        saveFiles.clear();
+        fileModel.clear();
+        
         int res = fc.showOpenDialog(null);
         
         if(res == JFileChooser.APPROVE_OPTION) {
@@ -244,7 +260,10 @@ catch (javax.swing.UnsupportedLookAndFeelException ex) {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new MainFrame().setVisible(true);
+                MainFrame mainFrame = new MainFrame();
+                mainFrame.setResizable(false);
+                mainFrame.setLocationRelativeTo(null);
+                mainFrame.setVisible(true);
             }
         });
     }
