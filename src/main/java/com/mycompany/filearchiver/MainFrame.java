@@ -1,8 +1,16 @@
 package com.mycompany.filearchiver;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -13,6 +21,7 @@ public class MainFrame extends javax.swing.JFrame {
     DefaultListModel fileModel = new DefaultListModel();
     JFileChooser fc = new JFileChooser();
     List<File> saveFiles = new LinkedList<>();
+    ProgressBar progressBarClass = new ProgressBar();
     File selectedFolder;
     String savePath = "";
     
@@ -28,17 +37,55 @@ public class MainFrame extends javax.swing.JFrame {
                 selectedFiles.add(saveFiles.get(selected));
             }
             
-            Zip.zip(savePath, selectedFiles, progressBar);
+            try {
+            BufferedInputStream origin = null;
+            FileOutputStream dest = new FileOutputStream(savePath + ".zip"); // path al guardar
+            ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(dest));
+            byte[] data = new byte[1024];
+            Iterator i = saveFiles.iterator();
+            
+            int c = 0;
+            while (i.hasNext() && !this.isCancelled()) {
+                c++;                
+                File filename = (File) i.next();
+                String path = filename.getPath();
+                FileInputStream fi = new FileInputStream(path);
+                origin = new BufferedInputStream(fi, 1024);
+                ZipEntry entry = new ZipEntry(filename.getName());
+                out.putNextEntry(entry);
+                
+                int count;
+                while ((count = origin.read(data, 0, 1024)) != -1) {
+                    out.write(data, 0, count);
+                }
+                progressBar.setValue(((c * 100) / saveFiles.size()));
+                origin.close();
+            }
+            out.close();
+            }catch( IOException e){}
+            
             return null;
         }
         
         @Override
         public void done(){
+            if (this.isCancelled()) {
+                JOptionPane.showMessageDialog(rootPane, "Compression have been canceled", 
+                            "Compression canceled", JOptionPane.INFORMATION_MESSAGE);
+                
+                progressBar.setValue(0);
+                infoLabel.setText("");
+                infoLabelOpen.setText("Choose a folder to open");
+                cancelButton.setEnabled(false);
+                return;
+            }
+            
             infoLabel.setText("Done!");
             fileModel.clear();
             JOptionPane.showMessageDialog(rootPane, "Your files have been compressed!", 
                         "Files compressed!", JOptionPane.INFORMATION_MESSAGE);
-            
+            infoLabelOpen.setText("Choose a folder to open");
+            cancelButton.setEnabled(false);
         }
         
     }
@@ -48,6 +95,7 @@ public class MainFrame extends javax.swing.JFrame {
         listFiles.setModel(fileModel);
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         progressBar.setStringPainted(true);
+        cancelButton.setEnabled(false);
     }
 
     /**
@@ -63,6 +111,8 @@ public class MainFrame extends javax.swing.JFrame {
         listFiles = new javax.swing.JList<>();
         progressBar = new javax.swing.JProgressBar();
         infoLabel = new javax.swing.JLabel();
+        cancelButton = new javax.swing.JButton();
+        infoLabelOpen = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         FileMenu = new javax.swing.JMenu();
         openOption = new javax.swing.JMenuItem();
@@ -75,8 +125,18 @@ public class MainFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        listFiles.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Select the files you want to compress", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.ABOVE_TOP));
+        listFiles.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
         jScrollPane1.setViewportView(listFiles);
+
+        cancelButton.setText("Cancel");
+        cancelButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelButtonActionPerformed(evt);
+            }
+        });
+
+        infoLabelOpen.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        infoLabelOpen.setText("Choose a folder to open");
 
         FileMenu.setText("File");
 
@@ -134,27 +194,31 @@ public class MainFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(65, 65, 65)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(65, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(infoLabelOpen, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(9, 9, 9)
-                        .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(77, 77, 77))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(cancelButton)))
+                .addContainerGap(40, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(24, 24, 24)
+                .addContainerGap(18, Short.MAX_VALUE)
+                .addComponent(infoLabelOpen, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 360, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(infoLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(14, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(cancelButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(21, 21, 21))
         );
 
         pack();
@@ -175,9 +239,9 @@ public class MainFrame extends javax.swing.JFrame {
                     "Save selected files to compress", JOptionPane.YES_NO_OPTION);
             
             if (res2 == JOptionPane.YES_OPTION) {
+                cancelButton.setEnabled(true);
                 savePath = file.getAbsolutePath();
                 infoLabel.setText("Compressing files ...");
-                ProgressBar progressBarClass = new ProgressBar();
                 progressBarClass.execute();
             }
         }
@@ -199,6 +263,8 @@ public class MainFrame extends javax.swing.JFrame {
                     this.fileModel.addElement(file.getName());
                 }
             }
+            infoLabelOpen.setText("Select files to compress from '" 
+                    + selectedFolder.getName() + "'");
         }
     }//GEN-LAST:event_openOptionActionPerformed
 
@@ -214,6 +280,10 @@ public class MainFrame extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(rootPane, "Luis Galindo Molina | Prashant Jeswani Tejwani", 
                 "Authors", WIDTH);
     }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
+        progressBarClass.cancel(true);
+    }//GEN-LAST:event_cancelButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -271,9 +341,11 @@ catch (javax.swing.UnsupportedLookAndFeelException ex) {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu FileMenu;
     private javax.swing.JMenu aboutMenu;
+    private javax.swing.JButton cancelButton;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuItem exitOption;
     private javax.swing.JLabel infoLabel;
+    private javax.swing.JLabel infoLabelOpen;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
